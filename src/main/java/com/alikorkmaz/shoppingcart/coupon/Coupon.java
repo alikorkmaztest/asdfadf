@@ -1,28 +1,10 @@
 package com.alikorkmaz.shoppingcart.coupon;
 
-import com.alikorkmaz.shoppingcart.enumtype.DiscountType;
+import com.alikorkmaz.shoppingcart.Cart;
 
-public class Coupon {
+public interface Coupon {
 
-    private final double discountAmount;
-    private final double minimumCartAmount;
-    private final DiscountType discountType;
+    boolean isApplicableFor(Cart cart);
 
-    public Coupon(double discountAmount, double minimumCartAmount, DiscountType discountType) {
-        this.discountAmount = discountAmount;
-        this.minimumCartAmount = minimumCartAmount;
-        this.discountType = discountType;
-    }
-
-    public boolean isApplicable(double cartAmount) {
-        return cartAmount >= minimumCartAmount;
-    }
-
-    public double getDiscountAmount() {
-        return discountAmount;
-    }
-
-    public DiscountType getDiscountType() {
-        return discountType;
-    }
+    double getDiscountAmountFor(double cartAmount);
 }

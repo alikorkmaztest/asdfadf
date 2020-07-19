@@ -1,35 +1,13 @@
 package com.alikorkmaz.shoppingcart.campaign;
 
+import com.alikorkmaz.shoppingcart.Cart;
 import com.alikorkmaz.shoppingcart.Category;
-import com.alikorkmaz.shoppingcart.enumtype.DiscountType;
 
-public class Campaign {
+public interface Campaign {
 
-    private final double discountAmount;
-    private final int minimumItemQuantity;
-    private final DiscountType discountType;
-    private final Category category;
+    boolean isApplicableFor(Cart cart);
 
-    public Campaign(double discountAmount, int minimumItemQuantity, DiscountType discountType, Category category) {
-        this.discountAmount = discountAmount;
-        this.minimumItemQuantity = minimumItemQuantity;
-        this.discountType = discountType;
-        this.category = category;
-    }
+    double getDiscountAmount(double cartAmount);
 
-    public boolean isApplicable(int itemQuantity) {
-        return itemQuantity >= minimumItemQuantity;
-    }
-
-    public double getDiscountAmount() {
-        return discountAmount;
-    }
-
-    public DiscountType getDiscountType() {
-        return discountType;
-    }
-
-    public Category getCategory() {
-        return category;
-    }
+    Category getCategory();
 }

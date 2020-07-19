@@ -1,5 +1,7 @@
 package com.alikorkmaz.shoppingcart;
 
+import com.alikorkmaz.shoppingcart.exception.InvalidParamException;
+
 public class CartItem {
 
     private final int quantity;
@@ -8,6 +10,13 @@ public class CartItem {
     public CartItem(int quantity, Product product) {
         this.quantity = quantity;
         this.product = product;
+        validate();
+    }
+
+    private void validate() {
+        if (quantity < 0) {
+            throw new InvalidParamException("quantity");
+        }
     }
 
     public double getTotalAmount() {

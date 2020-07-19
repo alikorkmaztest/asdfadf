@@ -1,12 +1,12 @@
 package com.alikorkmaz.shoppingcart;
 
+import com.alikorkmaz.shoppingcart.campaign.AmountCampaign;
 import com.alikorkmaz.shoppingcart.campaign.Campaign;
-import com.alikorkmaz.shoppingcart.campaign.CampaignDiscountAmountCalculator;
-import com.alikorkmaz.shoppingcart.campaign.CampaignPicker;
+import com.alikorkmaz.shoppingcart.campaign.RateCampaign;
+import com.alikorkmaz.shoppingcart.campaign.picker.CampaignPickerImpl;
+import com.alikorkmaz.shoppingcart.coupon.AmountCoupon;
 import com.alikorkmaz.shoppingcart.coupon.Coupon;
-import com.alikorkmaz.shoppingcart.coupon.CouponDiscountAmountCalculator;
-import com.alikorkmaz.shoppingcart.delivery.BasicDeliveryCostCalculator;
-import com.alikorkmaz.shoppingcart.enumtype.DiscountType;
+import com.alikorkmaz.shoppingcart.delivery.DeliveryCostCalculatorImpl;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
@@ -14,32 +14,30 @@ public class ShoppingCartApplication {
 
     public static void main(String[] args) {
         //SpringApplication.run(ShoppingCartApplication.class, args);
-        Category foodCategory = new Category("Food");
-        Category fruitCategory = new Category("Fruits", foodCategory);
-        Product appleProduct = new Product("Apple", 10.00, fruitCategory);
-        Product bananaProduct = new Product("Banana", 20.00, fruitCategory);
-        Product strawberryProduct = new Product("Strawberry", 15.00, fruitCategory);
-        Category vegetableCategory = new Category("Vegetables", foodCategory);
-        Product spinachProduct = new Product("Spinach", 12, vegetableCategory);
+        Category food = new Category("Food");
 
+        Category vegetable = new Category("Vegetables", food);
+        Product spinach = new Product("Spinach", 12, vegetable);
 
-        Cart cart = new Cart(new CampaignPicker(new CampaignDiscountAmountCalculator()),
-                new BasicDeliveryCostCalculator(2.99, 1, 1),
-                new CampaignDiscountAmountCalculator(),
-                new CouponDiscountAmountCalculator());
+        Category fruit = new Category("Fruits", food);
+        Product apple = new Product("Apple", 50.00, fruit);
+        Product banana = new Product("Banana", 20.00, fruit);
+        Product strawberry = new Product("Strawberry", 15.00, fruit);
 
-        cart.addCartItem(3, appleProduct);
-        cart.addCartItem(2, strawberryProduct);
-        cart.addCartItem(2, bananaProduct);
-        cart.addCartItem(2, spinachProduct);
+        Cart cart = new Cart(new CampaignPickerImpl(), new DeliveryCostCalculatorImpl(2.99, 1, 1));
+        cart.addCartItem(3, apple);
+        cart.addCartItem(2, strawberry);
+        cart.addCartItem(2, banana);
+        cart.addCartItem(2, spinach);
 
-        Campaign campaign1 = new Campaign(20.0, 3, DiscountType.RATE, fruitCategory);
-        Campaign campaign2 = new Campaign(400.0, 3, DiscountType.AMOUNT, vegetableCategory);
+        Campaign campaign1 = new RateCampaign(20.0, 3, fruit);
+        Campaign campaign2 = new AmountCampaign(40.0, 3, vegetable);
         cart.applyCampaigns(campaign1, campaign2);
-        Coupon coupon = new Coupon(20.0, 100.0, DiscountType.AMOUNT);
+
+        Coupon coupon = new AmountCoupon(100.0, 20.0);
         cart.applyCoupon(coupon);
 
-        System.out.println(cart);
+        cart.print();
     }
 
 }

@@ -1,5 +1,7 @@
 package com.alikorkmaz.shoppingcart;
 
+import com.alikorkmaz.shoppingcart.exception.InvalidParamException;
+
 import java.util.Objects;
 
 public class Product {
@@ -12,6 +14,17 @@ public class Product {
         this.title = title;
         this.price = price;
         this.category = category;
+        validate();
+    }
+
+    private void validate() {
+        if (price < 0) {
+            throw new InvalidParamException("price");
+        }
+    }
+
+    public boolean categoryEquals(Category category) {
+        return this.category.equals(category);
     }
 
     public String getTitle() {
@@ -26,10 +39,6 @@ public class Product {
         return category;
     }
 
-    public boolean categoryEquals(Category category) {
-        return this.category.equals(category);
-    }
-
     @Override
     public String toString() {
         return title + "($" + price + ")";
@@ -40,8 +49,8 @@ public class Product {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Product product = (Product) o;
-        return Objects.equals(getTitle(), product.getTitle()) &&
-                Objects.equals(getPrice(), product.getPrice()) &&
+        return Double.compare(product.getPrice(), getPrice()) == 0 &&
+                Objects.equals(getTitle(), product.getTitle()) &&
                 Objects.equals(getCategory(), product.getCategory());
     }
 

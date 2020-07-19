@@ -1,11 +1,10 @@
 package com.alikorkmaz.shoppingcart;
 
 import com.alikorkmaz.shoppingcart.campaign.Campaign;
-import com.alikorkmaz.shoppingcart.campaign.CampaignDiscountAmountCalculator;
-import com.alikorkmaz.shoppingcart.campaign.CampaignPicker;
+import com.alikorkmaz.shoppingcart.campaign.picker.CampaignPicker;
 import com.alikorkmaz.shoppingcart.coupon.Coupon;
-import com.alikorkmaz.shoppingcart.coupon.CouponDiscountAmountCalculator;
 import com.alikorkmaz.shoppingcart.delivery.DeliveryCostCalculator;
+import com.alikorkmaz.shoppingcart.exception.DiscountNotApplicableException;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -19,17 +18,11 @@ public class Cart {
     private Coupon appliedCoupon;
     private final CampaignPicker campaignPicker;
     private final DeliveryCostCalculator deliveryCostCalculator;
-    private final CampaignDiscountAmountCalculator campaignDiscountAmountCalculator;
-    private final CouponDiscountAmountCalculator couponDiscountAmountCalculator;
 
     public Cart(CampaignPicker campaignPicker,
-                DeliveryCostCalculator deliveryCostCalculator,
-                CampaignDiscountAmountCalculator campaignDiscountAmountCalculator,
-                CouponDiscountAmountCalculator couponDiscountAmountCalculator) {
+                DeliveryCostCalculator deliveryCostCalculator) {
         this.campaignPicker = campaignPicker;
         this.deliveryCostCalculator = deliveryCostCalculator;
-        this.campaignDiscountAmountCalculator = campaignDiscountAmountCalculator;
-        this.couponDiscountAmountCalculator = couponDiscountAmountCalculator;
         cartItems = new LinkedList<>();
     }
 
@@ -37,72 +30,20 @@ public class Cart {
         cartItems.add(new CartItem(quantity, product));
     }
 
-    private int getTotalItemQuantityByCategory(Category category) {
-        return cartItems.stream()
-                .filter(cartItem -> cartItem.productCategoryEquals(category))
-                .mapToInt(CartItem::getQuantity)
-                .sum();
-    }
-
-    private double getTotalAmount() {
-        return cartItems.stream()
-                .mapToDouble(CartItem::getTotalAmount)
-                .sum();
-    }
-
-    public double getCampaignDiscount() {
-        return Optional.ofNullable(appliedCampaign)
-                .map(campaign -> campaignDiscountAmountCalculator.calculate(getTotalAmount(), campaign))
-                .orElse(DOUBLE_ZERO);
-    }
-
-    private double getTotalAmountAfterCampaignDiscount() {
-        return getTotalAmount() - getCampaignDiscount();
-    }
-
-    public double getCouponDiscount() {
-        return Optional.ofNullable(appliedCoupon)
-                .map(coupon -> couponDiscountAmountCalculator.calculate(getTotalAmountAfterCampaignDiscount(), coupon))
-                .orElse(DOUBLE_ZERO);
-    }
-
-    public double getTotalAmountAfterDiscounts() {
-        return getTotalAmountAfterCampaignDiscount() - getCouponDiscount();
-    }
-
     public void applyCampaigns(Campaign... campaigns) {
         List<Campaign> validCampaigns = Arrays.stream(campaigns)
-                .filter(campaign -> campaign.isApplicable(getTotalItemQuantityByCategory(campaign.getCategory())))
+                .filter(campaign -> campaign.isApplicableFor(this))
                 .collect(Collectors.toList());
-        appliedCampaign = campaignPicker.pickBest(validCampaigns, getTotalAmount())
-                .orElseThrow(() -> new RuntimeException("not valid campaign"));
+        appliedCampaign = campaignPicker.pick(validCampaigns, getTotalAmount())
+                .orElseThrow(() -> new DiscountNotApplicableException("campaign"));
     }
 
     public void applyCoupon(Coupon coupon) {
-        if (coupon.isApplicable(getTotalAmount())) {
+        if (coupon.isApplicableFor(this)) {
             appliedCoupon = coupon;
         } else {
-            //winlentia you have to add x money to active coupon
-            throw new RuntimeException("not valid coupon");
+            throw new DiscountNotApplicableException("coupon");
         }
-    }
-
-    private List<Category> getCategories() {
-        return cartItems.stream()
-                .map(CartItem::getProductCategory)
-                .collect(Collectors.toList());
-    }
-
-    public double getNumberOfDistinctCategories() {
-        return getCategories().stream()
-                .distinct()
-                .count();
-    }
-
-    private List<Product> getProducts() {
-        return cartItems.stream()
-                .map(CartItem::getProduct)
-                .collect(Collectors.toList());
     }
 
     public double getNumberOfDifferentProducts() {
@@ -111,8 +52,63 @@ public class Cart {
                 .count();
     }
 
+    public double getNumberOfDistinctCategories() {
+        return getCategories().stream()
+                .distinct()
+                .count();
+    }
+
+    public double getTotalAmount() {
+        return cartItems.stream()
+                .mapToDouble(CartItem::getTotalAmount)
+                .sum();
+    }
+
     public double getDeliveryCost() {
         return deliveryCostCalculator.calculateFor(this);
+    }
+
+    public double getCouponDiscount() {
+        return Optional.ofNullable(appliedCoupon)
+                .map(coupon -> coupon.getDiscountAmountFor(getTotalAmount()))
+                .orElse(DOUBLE_ZERO);
+    }
+
+    public double getCampaignDiscount() {
+        return Optional.ofNullable(appliedCampaign)
+                .map(campaign -> campaign.getDiscountAmount(getTotalAmount()))
+                .orElse(DOUBLE_ZERO);
+    }
+
+    public double getTotalAmountAfterCampaignDiscount() {
+        return getTotalAmount() - getCampaignDiscount();
+    }
+
+    public double getTotalAmountAfterDiscounts() {
+        return getTotalAmountAfterCampaignDiscount() - getCouponDiscount();
+    }
+
+    public int getTotalItemQuantityByCategory(Category category) {
+        return cartItems.stream()
+                .filter(cartItem -> cartItem.productCategoryEquals(category))
+                .mapToInt(CartItem::getQuantity)
+                .sum();
+    }
+
+    private List<Category> getCategories() {
+        return cartItems.stream()
+                .map(CartItem::getProductCategory)
+                .collect(Collectors.toList());
+    }
+
+    private List<Product> getProducts() {
+        return cartItems.stream()
+                .map(CartItem::getProduct)
+                .collect(Collectors.toList());
+    }
+
+    public void print() {
+        System.out.println(this);
     }
 
     private HashMap<Category, List<CartItem>> getGroupedCardItems() {
@@ -126,7 +122,6 @@ public class Cart {
         });
         return groupedMap;
     }
-
 
     @Override
     public String toString() {
@@ -145,6 +140,6 @@ public class Cart {
                 .append("Coupon Discount: $").append(getCouponDiscount()).append("\n")
                 .append("Total Amount After Campaign and Coupon: $").append(getTotalAmountAfterDiscounts()).append("\n")
                 .append("Delivery Cost: $").append(getDeliveryCost());
-    return stringBuilder.toString();
+        return stringBuilder.toString();
     }
 }
