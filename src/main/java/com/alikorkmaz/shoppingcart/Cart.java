@@ -111,7 +111,7 @@ public class Cart {
         System.out.println(this);
     }
 
-    private HashMap<Category, List<CartItem>> getGroupedCardItems() {
+    private HashMap<Category, List<CartItem>> getGroupedCartItems() {
         HashMap<Category, List<CartItem>> groupedMap = new HashMap<>();
         cartItems.forEach(cartItem -> {
             Category productCategory = cartItem.getProductCategory();
@@ -126,8 +126,8 @@ public class Cart {
     @Override
     public String toString() {
         StringBuilder stringBuilder = new StringBuilder();
-        HashMap<Category, List<CartItem>> groupedCardItems = getGroupedCardItems();
-        groupedCardItems.forEach(
+        HashMap<Category, List<CartItem>> groupedCartItems = getGroupedCartItems();
+        groupedCartItems.forEach(
                 (category, cartItems) -> {
                     stringBuilder.append(category);
                     cartItems.forEach(stringBuilder::append);
